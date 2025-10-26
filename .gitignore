@@ -1,0 +1,12 @@
+reddit_credenitials.txt
+kafka_credentials.txt
+mongo_credentials.txt
+
+.venv/
+venv/
+env/
+
+.vscode/
+.idea/
+
+*.log
