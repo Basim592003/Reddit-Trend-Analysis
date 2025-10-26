@@ -46,9 +46,9 @@ producer = Producer(kafka_config)
 def delivery_report(err, msg):
     """Callback for message delivery reports"""
     if err is not None:
-        print(f'❌ Message delivery failed: {err}')
+        print(f'Message delivery failed: {err}')
     else:
-        print(f'✓ Message delivered to {msg.topic()} [{msg.partition()}]')
+        print(f'Message delivered to {msg.topic()} [{msg.partition()}]')
 
 def fetch_and_produce(subreddit_names, posts_per_subreddit=10):
     """Fetch Reddit posts from multiple subreddits and produce to Kafka"""
@@ -56,7 +56,7 @@ def fetch_and_produce(subreddit_names, posts_per_subreddit=10):
     total_produced = 0
     
     for subreddit_name in subreddit_names:
-        print(f"\n📡 Fetching from r/{subreddit_name}...")
+        print(f"\n Fetching from r/{subreddit_name}...")
         
         try:
             subreddit = reddit.subreddit(subreddit_name)
@@ -109,11 +109,11 @@ def fetch_and_produce(subreddit_names, posts_per_subreddit=10):
                 producer.poll(0)
 
         except Exception as e:
-            print(f"❌ Error fetching from r/{subreddit_name}: {e}")
+            print(f"Error fetching from r/{subreddit_name}: {e}")
     
-    print("\n⏳ Flushing remaining messages...")
+    print("\nFlushing remaining messages...")
     producer.flush()
-    print(f"✅ Total posts produced: {total_produced}")
+    print(f" Total posts produced: {total_produced}")
     return total_produced
 
 
@@ -133,7 +133,7 @@ print(f"Total expected posts: ~{len(subreddits) * 10}")
 
 print("\n🚀 Starting single fetch...")
 fetch_and_produce(subreddits, posts_per_subreddit=10)
-print("\n✅ Producer finished!")
+print("\nProducer finished!")
 
 
 

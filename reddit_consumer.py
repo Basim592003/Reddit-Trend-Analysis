@@ -13,7 +13,6 @@ with open(r'PROJECT\.venv\kafka_credentials.txt', 'r') as f:
             key, value = line.strip().split("=", 1)
             kafka_creds[key] = value
 
-# Load MongoDB credentials
 mongo_creds = {}
 with open(r'PROJECT\.venv\mongo_credentials.txt', 'r') as f:
     for line in f:
@@ -25,19 +24,19 @@ print('=' *60)
 print('Reddit Consumer Started')
 print('=' *60)
 
-print("\n📦 Loading sentiment analyzers...")
+print("\nLoading sentiment analyzers...")
 try:
     vader = SentimentIntensityAnalyzer()
-    print("✅ VADER loaded!")
+    print("VADER loaded!")
 except:
-    print("⚠️ Downloading VADER lexicon...")
+    print("Downloading VADER lexicon...")
     nltk.download('vader_lexicon')
     vader = SentimentIntensityAnalyzer()
-    print("✅ VADER loaded!")
+    print("VADER loaded!")
 
 transformer = pipeline('sentiment-analysis', 
                       model="cardiffnlp/twitter-roberta-base-sentiment-latest")
-print("✅ Transformer model loaded!")
+print(" Transformer model loaded!")
 
 kafka_config = {
     'bootstrap.servers': kafka_creds['bootstrap_servers'],
@@ -50,9 +49,9 @@ kafka_config = {
     'enable.auto.commit': True,
 }
 consumer = Consumer(kafka_config)
-print("✅ Kafka consumer initialized!")
+print("Kafka consumer initialized!")
 
-print("\n🔌 Connecting to MongoDB...")
+print("\n Connecting to MongoDB...")
 mongo_client = MongoClient(mongo_creds['connection_string'])
 db = mongo_client['reddit_sentiment']
 collection = db['posts']
@@ -62,7 +61,7 @@ collection.create_index('timestamp')
 collection.create_index('subreddit')
 collection.create_index('transformer_label')
 
-print(f"✅ Connected to MongoDB: {db.name}.{collection.name}")
+print(f"Connected to MongoDB: {db.name}.{collection.name}")
 
 def analyze_sentiment(text):
     """Analyze sentiment using both VADER and transformer"""
@@ -80,37 +79,32 @@ def analyze_sentiment(text):
             'transformer_score': trans_score
         }
     except Exception as e:
-        print(f"⚠️ Error analyzing sentiment: {e}")
+        print(f"Error analyzing sentiment: {e}")
         return None
 
 def process_message(message):
     """Process a message from Kafka, analyze sentiment, and store in MongoDB"""
     try:
-        # Parse message
         data = json.loads(message.value().decode('utf-8'))
         post_text = data.get('post_text', data.get('title', ''))
         sentiment = analyze_sentiment(post_text)
         
         if sentiment is None:
-            print(f"⚠️ Skipped {data.get('post_id', 'unknown')}: No sentiment")
+            print(f" Skipped {data.get('post_id', 'unknown')}: No sentiment")
             return False
         
-        # Add sentiment analysis results
         data['vader_score'] = sentiment['vader_score']
         data['transformer_label'] = sentiment['transformer_label']
         data['transformer_score'] = sentiment['transformer_score']
         
-        # Add processing timestamp
         data['processed_at'] = datetime.utcnow().isoformat()
         
-        # Insert or update in MongoDB (upsert to avoid duplicates)
         result = collection.update_one(
             {'post_id': data['post_id']},
             {'$set': data},
             upsert=True
         )
         
-        # Get sentiment emoji
         sentiment_emoji = {
             'positive': '😊',
             'negative': '😞',
@@ -124,7 +118,7 @@ def process_message(message):
         
         return True
     except Exception as e:
-        print(f"❌ Error processing message: {e}")
+        print(f"Error processing message: {e}")
         return False
 
 def consume_messages():
@@ -147,26 +141,24 @@ def consume_messages():
             
             if msg.error():
                 if msg.error().code() == KafkaError._PARTITION_EOF:
-                    print(f'📭 Reached end of partition {msg.partition()}')
+                    print(f' Reached end of partition {msg.partition()}')
                 else:
-                    print(f'❌ Error: {msg.error()}')
+                    print(f' Error: {msg.error()}')
                 continue
             
-            # Process message
             if process_message(msg):
                 processed_count += 1
                 
-                # Print stats every 10 messages
                 if processed_count % 10 == 0:
-                    print(f"\n📊 Total processed: {processed_count} messages\n")
+                    print(f"\n Total processed: {processed_count} messages\n")
             
     except KeyboardInterrupt:
-        print(f"\n\n🛑 Shutting down consumer...")
-        print(f"📊 Total messages processed: {processed_count}")
+        print(f"\n\n Shutting down consumer...")
+        print(f" Total messages processed: {processed_count}")
     finally:
         consumer.close()
         mongo_client.close()
-        print("✅ Consumer closed gracefully.")
+        print(" Consumer closed gracefully.")
 
 if __name__ == "__main__":
     consume_messages()
