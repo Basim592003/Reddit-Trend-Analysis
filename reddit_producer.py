@@ -166,7 +166,6 @@ if __name__ == "__main__":
     print("Reddit Producer with Threading (Posts + Comments)")
     print("="*60)
     
-    # List of subreddits
     subreddits = [
         'technology', 'python', 'datascience', 'MachineLearning',
         'programming', 'artificial', 'news', 'worldnews'
@@ -179,12 +178,12 @@ if __name__ == "__main__":
     
     start_time = time.time()
     
-    print("\n🚀 Starting threaded fetch...\n")
+    print("\nStarting threaded fetch...\n")
     fetch_and_produce_threaded(subreddits, posts_per_subreddit=10, comments_per_post=15)
     
     elapsed = time.time() - start_time
     print(f"\nTotal time: {elapsed:.2f} seconds")
-    print("✅ Producer finished!")
+    print("Producer finished!")
 
 
 
