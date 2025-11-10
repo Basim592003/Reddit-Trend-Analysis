@@ -118,11 +118,11 @@ def fetch_subreddit(subreddit_name, posts_per_subreddit, stats_dict):
         stats_dict['total_posts'] += local_posts
         stats_dict['total_comments'] += local_comments
     
-    print(f" [{subreddit_name}] Done! Posts: {local_posts}, Comments: {local_comments}")
+    print(f" [{subreddit_name}], Posts: {local_posts}, Comments: {local_comments}")
 
 def fetch_and_produce_threaded(subreddit_names, posts_per_subreddit=10):
     if isinstance(subreddit_names, str):
-        raise TypeError(f"subreddit_names must be a list! Got string: '{subreddit_names}'")
+        raise TypeError(f"subreddit_names not a list")
     
     stats_dict = {
         'total_posts': 0,
@@ -142,7 +142,6 @@ def fetch_and_produce_threaded(subreddit_names, posts_per_subreddit=10):
     for thread in threads:
         thread.join()
     
-    print("\n Flushing remaining messages...")
     producer.flush()
     
     return stats_dict['total_posts'], stats_dict['total_comments']
@@ -157,18 +156,10 @@ if __name__ == "__main__":
         'technology'
     ]
     
-    POSTS_LIMIT = 1
-    
-    print(f"\nConfiguration:")
-    print(f"  Subreddits: {len(subreddits)}")
-    print(f"  Subreddit names: {', '.join(subreddits)}")
-    print(f"  Posts per subreddit: {POSTS_LIMIT}")
-    print(f"  Comments per post: ~15")
-    print(f"  Expected total posts: {len(subreddits) * POSTS_LIMIT}")
+    POSTS_LIMIT = 10
     
     start_time = time.time()
     
-    print("\n Starting threaded fetch...\n")
     total_posts, total_comments = fetch_and_produce_threaded(subreddits, posts_per_subreddit=POSTS_LIMIT)
     
     elapsed = time.time() - start_time
