@@ -20,23 +20,14 @@ with open(r'PROJECT\.venv\mongo_credentials.txt', 'r') as f:
             key, value = line.strip().split("=", 1)
             mongo_creds[key] = value
 
-print('=' *60)
-print('Reddit Consumer Started')
-print('=' *60)
-
-print("\nLoading sentiment analyzers...")
 try:
     vader = SentimentIntensityAnalyzer()
-    print("VADER loaded!")
 except:
-    print("Downloading VADER lexicon...")
     nltk.download('vader_lexicon')
     vader = SentimentIntensityAnalyzer()
-    print("VADER loaded!")
 
 transformer = pipeline('sentiment-analysis', 
                       model="cardiffnlp/twitter-roberta-base-sentiment-latest")
-print(" Transformer model loaded!")
 
 kafka_config = {
     'bootstrap.servers': kafka_creds['bootstrap_servers'],
@@ -49,9 +40,7 @@ kafka_config = {
     'enable.auto.commit': True,
 }
 consumer = Consumer(kafka_config)
-print("Kafka consumer initialized!")
 
-print("\n Connecting to MongoDB...")
 mongo_client = MongoClient(mongo_creds['connection_string'])
 db = mongo_client['reddit_sentiment']
 collection = db['posts']
@@ -112,9 +101,9 @@ def process_message(message):
         }.get(data['transformer_label'], '❓')
         
         if result.upserted_id:
-            print(f"✓ Inserted: {data['post_id']} | r/{data['subreddit']} | {sentiment_emoji} {data['transformer_label']} ({data['transformer_score']:.2f})")
+            print(f" Inserted: {data['post_id']} | r/{data['subreddit']} | {sentiment_emoji} {data['transformer_label']} ({data['transformer_score']:.2f})")
         else:
-            print(f"↻ Updated: {data['post_id']} | r/{data['subreddit']} | {sentiment_emoji} {data['transformer_label']} ({data['transformer_score']:.2f})")
+            print(f" Updated: {data['post_id']} | r/{data['subreddit']} | {sentiment_emoji} {data['transformer_label']} ({data['transformer_score']:.2f})")
         
         return True
     except Exception as e:
@@ -124,11 +113,6 @@ def process_message(message):
 def consume_messages():
     """Consume messages from Kafka, analyze sentiment, and store in MongoDB"""
     consumer.subscribe(['reddit-sentiment'])
-    
-    print("\n" + "="*60)
-    print("⏳ Waiting for messages from Kafka...")
-    print("Press Ctrl+C to stop")
-    print("="*60 + "\n")
     
     processed_count = 0
     
@@ -153,12 +137,11 @@ def consume_messages():
                     print(f"\n Total processed: {processed_count} messages\n")
             
     except KeyboardInterrupt:
-        print(f"\n\n Shutting down consumer...")
         print(f" Total messages processed: {processed_count}")
     finally:
         consumer.close()
         mongo_client.close()
-        print(" Consumer closed gracefully.")
+        print(" Consumer closed.")
 
 if __name__ == "__main__":
     consume_messages()
