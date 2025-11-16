@@ -1,0 +1,4 @@
+subreddits:
+  - technology
+posts_per_subreddit: 10
+comments_per_post: 15
