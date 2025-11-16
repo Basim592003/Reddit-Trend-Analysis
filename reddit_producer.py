@@ -5,6 +5,7 @@ from threading import Lock
 from datetime import datetime, timezone
 from confluent_kafka import Producer
 import praw
+import yaml
 
 creds = {}
 with open(r'reddit_credentials.txt', 'r') as f:
@@ -51,7 +52,7 @@ def produce_message(key, value):
         callback=delivery_report
     )
 
-def fetch_subreddit(subreddit_name, posts_per_subreddit, stats_dict):
+def fetch_subreddit(subreddit_name, posts_per_subreddit, comments_per_post, stats_dict):
     local_posts = 0
     local_comments = 0
     
@@ -89,7 +90,7 @@ def fetch_subreddit(subreddit_name, posts_per_subreddit, stats_dict):
                 post.comment_sort = "top"   
                 post.comments.replace_more(limit=0)
 
-                for comment in post.comments[:15]:
+                for comment in post.comments[:comments_per_post]:
                     if not comment.body or comment.body in ['[deleted]', '[removed]']:
                         continue
                         
@@ -121,7 +122,7 @@ def fetch_subreddit(subreddit_name, posts_per_subreddit, stats_dict):
     
     print(f" [{subreddit_name}], Posts: {local_posts}, Comments: {local_comments}")
 
-def fetch_and_produce_threaded(subreddit_names, posts_per_subreddit=10):
+def fetch_and_produce_threaded(subreddit_names, posts_per_subreddit, comments_per_post):
     if isinstance(subreddit_names, str):
         raise TypeError(f"subreddit_names not a list")
     
@@ -135,7 +136,7 @@ def fetch_and_produce_threaded(subreddit_names, posts_per_subreddit=10):
     for subreddit_name in subreddit_names:
         thread = threading.Thread(
             target=fetch_subreddit,
-            args=(subreddit_name, posts_per_subreddit, stats_dict)
+            args=(subreddit_name, posts_per_subreddit, comments_per_post, stats_dict)
         )
         threads.append(thread)
         thread.start()
@@ -153,15 +154,17 @@ if __name__ == "__main__":
     print("Reddit Producer with Threading (Posts + Comments)")
     print("="*60)
     
-    subreddits = [
-        'whatisit'
-    ]
+
+    with open('config.yaml', 'r') as f:
+        config = yaml.safe_load(f)
     
-    POSTS_LIMIT = 10
-    
+    subreddits = config['subreddits']
+    POSTS_LIMIT = config['posts_per_subreddit']
+    COMMENTS_LIMIT = config['comments_per_post']
+
     start_time = time.time()
     
-    total_posts, total_comments = fetch_and_produce_threaded(subreddits, posts_per_subreddit=POSTS_LIMIT)
+    total_posts, total_comments = fetch_and_produce_threaded(subreddits, posts_per_subreddit=POSTS_LIMIT, comments_per_post=COMMENTS_LIMIT)
     
     elapsed = time.time() - start_time
     
