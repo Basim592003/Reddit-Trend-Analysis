@@ -65,7 +65,6 @@ def fetch_subreddit(subreddit_name, posts_per_subreddit, stats_dict):
             
             if not post_text or not post_text.strip():
                 continue
-                
             post_message = {
                 'type': 'post',
                 'post_id': post.id,
@@ -79,7 +78,9 @@ def fetch_subreddit(subreddit_name, posts_per_subreddit, stats_dict):
                 'score': post.score,
                 'num_comments': post.num_comments,
                 'upvote_ratio': post.upvote_ratio,
-                'url': post.url
+                'url': post.url,
+                'permalink': f"https://www.reddit.com{post.permalink}"
+                
             }
             produce_message(post.id, post_message)
             local_posts += 1
@@ -153,7 +154,7 @@ if __name__ == "__main__":
     print("="*60)
     
     subreddits = [
-        'technology'
+        'whatisit'
     ]
     
     POSTS_LIMIT = 10

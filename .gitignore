@@ -1,6 +1,7 @@
-reddit_credenitials.txt
+reddit_credentials.txt
 kafka_credentials.txt
 mongo_credentials.txt
+kafka resource.txt
 
 .venv/
 venv/
@@ -10,3 +11,15 @@ env/
 .idea/
 
 *.log
+
+*.zip
+
+*.docx
+
+test.py
+reddit_fetch.py
+import sqlite3.py
+
+iteration*.pdf
+*_old.py
+*_backup.py
