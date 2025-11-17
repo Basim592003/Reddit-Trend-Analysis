@@ -23,3 +23,5 @@ import sqlite3.py
 iteration*.pdf
 *_old.py
 *_backup.py
+
+*.key
