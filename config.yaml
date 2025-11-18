@@ -5,9 +5,26 @@ subreddits:
   - datascience
   - artificial
   - Python
-  - learnprogramming
-  - coding
-  - webdev
-  - javascript
+  - WorldNews
+  - news
+  - politics
+  - sports
+  - nba
+  - soccer
+  - nfl
+  - baseball
+  - hockey
+  - formula1
+  - tennis
+  - gaming
+  - esports
+  - science
+  - Futurology
+  - CryptoCurrency
+  - stocks
+  - business
+
+batch_size: 6
 posts_per_subreddit: 8
 comments_per_post: 15
+cycle_delay: 3600
