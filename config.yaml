@@ -1,4 +1,13 @@
 subreddits:
   - technology
-posts_per_subreddit: 10
+  - programming
+  - MachineLearning
+  - datascience
+  - artificial
+  - Python
+  - learnprogramming
+  - coding
+  - webdev
+  - javascript
+posts_per_subreddit: 8
 comments_per_post: 15

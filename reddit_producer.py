@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from confluent_kafka import Producer
 import praw
 import yaml
+from prawcore.exceptions import TooManyRequests, RequestException
 
 creds = {}
 with open(r'reddit_credentials.txt', 'r') as f:
@@ -39,6 +40,7 @@ producer = Producer(kafka_config)
 print(" Kafka producer initialized!")
 
 stats_lock = Lock()
+rate_limit_lock = Lock()
 
 def delivery_report(err, msg):
     if err is not None:
@@ -62,6 +64,9 @@ def fetch_subreddit(subreddit_name, posts_per_subreddit, comments_per_post, stat
         subreddit = reddit.subreddit(subreddit_name)
         
         for post in subreddit.new(limit=posts_per_subreddit):
+            with rate_limit_lock:
+                time.sleep(1)
+            
             post_text = f"{post.title}. {post.selftext}" if post.selftext else post.title
             
             if not post_text or not post_text.strip():
@@ -108,11 +113,18 @@ def fetch_subreddit(subreddit_name, posts_per_subreddit, comments_per_post, stat
                     }
                     produce_message(comment.id, comment_message)
                     local_comments += 1
+                    
+            except TooManyRequests:
+                print(f"    [{subreddit_name}] Rate limit hit! Waiting 60s...")
+                time.sleep(60)
             except Exception as e:
                 print(f"    [{subreddit_name}] Error fetching comments: {e}")
             
             producer.poll(0)
 
+    except TooManyRequests:
+        print(f"[{subreddit_name}] Rate limit hit! Waiting 60s...")
+        time.sleep(60)
     except Exception as e:
         print(f"[{subreddit_name}] Error: {e}")
     
