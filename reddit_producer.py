@@ -225,6 +225,8 @@ if __name__ == "__main__":
                 
         except KeyboardInterrupt:
             logger.info("\nShutdown requested by user")
+            logger.info(f"  Posts: {total_posts}")
+            logger.info(f"  Comments: {total_comments}")
             producer.flush()
             break
         except Exception as e:
