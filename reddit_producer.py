@@ -9,6 +9,10 @@ import yaml
 from prawcore.exceptions import TooManyRequests, RequestException
 import logging
 from logging.handlers import RotatingFileHandler
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -20,32 +24,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-creds = {}
-with open(r'reddit_credentials.txt', 'r') as f:
-    for line in f:
-        if '=' in line:
-            key, value = line.strip().split("=", 1)
-            creds[key] = value
-
-kafka_creds = {}
-with open(r'kafka_credentials.txt', 'r') as f:
-    for line in f:
-        if '=' in line:
-            key, value = line.strip().split("=", 1)
-            kafka_creds[key] = value
-
-reddit = praw.Reddit(client_id=creds['client_id'],
-                     client_secret=creds['client_secret'],
-                     user_agent=creds['user_agent'])
+reddit = praw.Reddit(
+    client_id=os.getenv('REDDIT_CLIENT_ID'),
+    client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
+    user_agent=os.getenv('REDDIT_USER_AGENT')
+)
 
 logger.info("Reddit client initialized!")
 
 kafka_config = {
-    'bootstrap.servers': kafka_creds['bootstrap_servers'],
+    'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS'),
     'security.protocol': 'SASL_SSL',
     'sasl.mechanisms': 'PLAIN',
-    'sasl.username': kafka_creds['api_key'],
-    'sasl.password': kafka_creds['api_secret'],
+    'sasl.username': os.getenv('KAFKA_API_KEY'),
+    'sasl.password': os.getenv('KAFKA_API_SECRET'),
 }
 
 producer = Producer(kafka_config)

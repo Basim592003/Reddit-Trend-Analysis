@@ -2,7 +2,6 @@ import json
 from datetime import datetime, timezone
 from confluent_kafka import Consumer, KafkaError
 from pymongo import MongoClient
-from datetime import datetime
 from nltk.sentiment import SentimentIntensityAnalyzer
 from transformers import pipeline
 import nltk
@@ -27,7 +26,7 @@ except:
     nltk.download('vader_lexicon')
     vader = SentimentIntensityAnalyzer()
 
-transformer = pipeline('sentiment-analysis', 
+transformer = pipeline('sentiment-analysis',
                       model="cardiffnlp/twitter-roberta-base-sentiment-latest")
 
 kafka_config = {
@@ -66,11 +65,18 @@ comment.create_index('transformer_label')
 print(f"Connected to MongoDB: {db.name}.{post.name}")
 print(f"Connected to MongoDB: {db.name}.{comment.name}")
 
+new_posts_added = 0
+new_comments_added = 0
+updated_posts = 0
+updated_comments = 0
+error_posts = 0
+error_comments = 0
+
+
 def analyze_sentiment(text):
-    """Analyze sentiment using both VADER and transformer"""
     if not text or not text.strip():
         return None
-    
+
     try:
         vader_score = vader.polarity_scores(text)['compound']
         trans_result = transformer(text[:512])[0]
@@ -85,104 +91,133 @@ def analyze_sentiment(text):
         print(f"Error analyzing sentiment: {e}")
         return None
 
+
 def process_message(message):
-    """Process a message from Kafka, analyze sentiment, and store in MongoDB"""
+    global new_posts_added, new_comments_added
+    global updated_posts, updated_comments
+    global error_posts, error_comments
+
     try:
         data = json.loads(message.value().decode('utf-8'))
-        if data.get('type') == 'post':
-            post_text = data.get('post_text', data.get('title', ''))
-        elif data.get('type') == 'comment':
-            post_text = data.get('body', '')
-        
-        sentiment = analyze_sentiment(post_text)
-        
+        msg_type = data.get('type')
+
+        if msg_type == 'post':
+            text_to_analyze = data.get('post_text') or data.get('title', '')
+        else:
+            text_to_analyze = data.get('body', '')
+
+        sentiment = analyze_sentiment(text_to_analyze)
+
         if sentiment is None:
-            item_id = data.get('post_id') or data.get('comment_id')
-            print(f" Skipped {item_id}: No sentiment")
+            identifier = data.get('post_id') or data.get('comment_id')
+            print(f"SKIPPED (No sentiment): {identifier}")
+
+            if msg_type == 'post':
+                error_posts += 1
+            else:
+                error_comments += 1
+
             return False
 
-        
-        data['vader_score'] = sentiment['vader_score']
-        data['transformer_label'] = sentiment['transformer_label']
-        data['transformer_score'] = sentiment['transformer_score']
-        data['processed_at'] = datetime.now(timezone.utc).isoformat()
-    
-        
-        sentiment_emoji = {
-            'positive': '😊',
-            'negative': '😞',
-            'neutral': '😐'
-        }.get(data['transformer_label'], '❓')
-        
-        if data.get('type') == 'post':
-            result = post.update_one(
-            {'post_id': data['post_id']},
-            {'$set': data},
-            upsert=True
-        )
-        
-            if result.upserted_id:
-                print(f" Post: {data['post_id']} | r/{data['subreddit']} | {sentiment_emoji} {data['transformer_label']}")
-            else:
-                print(f" Updated: {data['post_id']}")
+        data.update({
+            'vader_score': sentiment['vader_score'],
+            'transformer_label': sentiment['transformer_label'],
+            'transformer_score': sentiment['transformer_score'],
+            'processed_at': datetime.now(timezone.utc).isoformat()
+        })
 
-        elif data.get('type') == 'comment':
-        
+        if msg_type == 'post':
+            result = post.update_one(
+                {'post_id': data['post_id']},
+                {'$set': data},
+                upsert=True
+            )
+
+            if result.upserted_id:
+                print(f"NEW POST: {data['post_id']} | r/{data['subreddit']}")
+                new_posts_added += 1
+            else:
+                print(f"UPDATED POST: {data['post_id']}")
+                updated_posts += 1
+
+        else:  
             result = comment.update_one(
                 {'comment_id': data['comment_id']},
                 {'$set': data},
                 upsert=True
             )
-        if result.upserted_id:
-            print(f" Comment: {data['comment_id']} | r/{data['subreddit']} | {sentiment_emoji} {data['transformer_label']}")
-        else:
-            print(f" Updated: {data['comment_id']}")
-        
+
+            if result.upserted_id:
+                print(f"NEW COMMENT: {data['comment_id']} | r/{data['subreddit']}")
+                new_comments_added += 1
+            else:
+                print(f"UPDATED COMMENT: {data['comment_id']}")
+                updated_comments += 1
+
         return True
+
     except Exception as e:
-        print(f" Error processing message: {e}")
+        try:
+            raw = json.loads(message.value().decode('utf-8'))
+            identifier = raw.get('post_id') or raw.get('comment_id')
+            msg_type = raw.get('type')
+        except:
+            identifier = None
+            msg_type = None
+
+        print(f"ERROR processing item {identifier}: {e}")
+
+        if msg_type == 'post':
+            error_posts += 1
+        else:
+            error_comments += 1
+
         return False
 
 
 def consume_messages():
     consumer.subscribe(['reddit-sentiment'])
-    
-    posts_count = 0
-    comments_count = 0
     empty_polls = 0
-    
+
     try:
         while True:
             msg = consumer.poll(timeout=1.0)
-            
+
             if msg is None:
                 empty_polls += 1
                 if empty_polls > 10:
                     break
                 continue
-            
+
             empty_polls = 0
-            
+
             if msg.error():
                 if msg.error().code() == KafkaError._PARTITION_EOF:
                     break
                 else:
                     continue
-            
-            if process_message(msg):
-                data = json.loads(msg.value().decode('utf-8'))
-                if data.get('type') == 'post':
-                    posts_count += 1
-                elif data.get('type') == 'comment':
-                    comments_count += 1
-            
+
+            process_message(msg)
+
     except KeyboardInterrupt:
         pass
+
     finally:
         consumer.close()
         mongo_client.close()
 
+        print("\n=============================")
+        print("       MONGO SUMMARY")
+        print("=============================")
+        print(f"New posts added:       {new_posts_added}")
+        print(f"Updated posts:         {updated_posts}")
+        print(f"Post errors:           {error_posts}")
+        print("")
+        print(f"New comments added:    {new_comments_added}")
+        print(f"Updated comments:      {updated_comments}")
+        print(f"Comment errors:        {error_comments}")
+        print("=============================")
+
 
 if __name__ == "__main__":
     consume_messages()
-
