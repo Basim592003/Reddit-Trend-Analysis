@@ -25,3 +25,4 @@ iteration*.pdf
 *_backup.py
 
 *.key
+*.env
