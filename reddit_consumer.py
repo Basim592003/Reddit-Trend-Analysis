@@ -5,20 +5,10 @@ from pymongo import MongoClient
 from nltk.sentiment import SentimentIntensityAnalyzer
 from transformers import pipeline
 import nltk
+import os
+from dotenv import load_dotenv
 
-kafka_creds = {}
-with open(r'kafka_credentials.txt', 'r') as f:
-    for line in f:
-        if '=' in line:
-            key, value = line.strip().split("=", 1)
-            kafka_creds[key] = value
-
-mongo_creds = {}
-with open(r'mongo_credentials.txt', 'r') as f:
-    for line in f:
-        if '=' in line:
-            key, value = line.strip().split("=", 1)
-            mongo_creds[key] = value
+load_dotenv()
 
 try:
     vader = SentimentIntensityAnalyzer()
@@ -30,11 +20,11 @@ transformer = pipeline('sentiment-analysis',
                       model="cardiffnlp/twitter-roberta-base-sentiment-latest")
 
 kafka_config = {
-    'bootstrap.servers': kafka_creds['bootstrap_servers'],
+    'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS'),
     'security.protocol': 'SASL_SSL',
     'sasl.mechanisms': 'PLAIN',
-    'sasl.username': kafka_creds['api_key'],
-    'sasl.password': kafka_creds['api_secret'],
+    'sasl.username': os.getenv('KAFKA_API_KEY'),
+    'sasl.password': os.getenv('KAFKA_API_SECRET'),
     'group.id': 'reddit-sentiment-consumer',
     'auto.offset.reset': 'earliest',
     'enable.auto.commit': True,
@@ -42,7 +32,7 @@ kafka_config = {
 consumer = Consumer(kafka_config)
 
 try:
-    mongo_client = MongoClient(mongo_creds['connection_string'])
+    mongo_client = MongoClient(os.getenv('MONGO_CONNECTION_STRING'))
     db = mongo_client['reddit_sentiment']
     post = db['posts']
     comment = db['comments']
