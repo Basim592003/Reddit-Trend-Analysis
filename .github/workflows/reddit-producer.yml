@@ -2,28 +2,29 @@ name: Reddit Data Producer
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # Run every 30 minutes
-  workflow_dispatch:  # Allow manual trigger
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
   fetch-reddit-data:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     steps:
       - name: Checkout code
-        uses: actions/upload-artifact@v4  # Changed from v3 to v4
+        uses: actions/checkout@v4
         with:
-          ref: feature/continuous-producer  
+          ref: feature/continuous-producer
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      
+
       - name: Install dependencies
         run: |
           pip install praw confluent-kafka pyyaml python-dotenv
-      
+
       - name: Create .env file
         run: |
           cat > .env << EOF
@@ -34,13 +35,13 @@ jobs:
           KAFKA_API_KEY=${{ secrets.KAFKA_API_KEY }}
           KAFKA_API_SECRET=${{ secrets.KAFKA_API_SECRET }}
           EOF
-      
+
       - name: Run Reddit Producer
         run: python reddit_producer.py
-      
+
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: producer-logs
           path: producer.log
