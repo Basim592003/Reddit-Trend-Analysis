@@ -25,6 +25,5 @@ subreddits:
   - business
 
 batch_size: 6
-posts_per_subreddit: 8
-comments_per_post: 8
-cycle_delay: 7200
+posts_per_subreddit: 5
+comments_per_post: 5
