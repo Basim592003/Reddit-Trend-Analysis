@@ -15,7 +15,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        RotatingFileHandler('producer.log', maxBytes=10*1024*1024, backupCount=5),
+        RotatingFileHandler('consumer.log', maxBytes=10*1024*1024, backupCount=5),
         logging.StreamHandler()
     ]
 )
