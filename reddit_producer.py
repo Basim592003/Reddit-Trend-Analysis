@@ -7,44 +7,48 @@ from confluent_kafka import Producer
 import praw
 import yaml
 from prawcore.exceptions import TooManyRequests, RequestException
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+from dotenv import load_dotenv
 
-creds = {}
-with open(r'reddit_credentials.txt', 'r') as f:
-    for line in f:
-        if '=' in line:
-            key, value = line.strip().split("=", 1)
-            creds[key] = value
+load_dotenv()
 
-kafka_creds = {}
-with open(r'kafka_credentials.txt', 'r') as f:
-    for line in f:
-        if '=' in line:
-            key, value = line.strip().split("=", 1)
-            kafka_creds[key] = value
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        RotatingFileHandler('producer.log', maxBytes=10*1024*1024, backupCount=5),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
-reddit = praw.Reddit(client_id=creds['client_id'],
-                     client_secret=creds['client_secret'],
-                     user_agent=creds['user_agent'])
+reddit = praw.Reddit(
+    client_id=os.getenv('REDDIT_CLIENT_ID'),
+    client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
+    user_agent=os.getenv('REDDIT_USER_AGENT')
+)
 
-print(" Reddit client initialized!")
+logger.info("Reddit client initialized!")
 
 kafka_config = {
-    'bootstrap.servers': kafka_creds['bootstrap_servers'],
+    'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS'),
     'security.protocol': 'SASL_SSL',
     'sasl.mechanisms': 'PLAIN',
-    'sasl.username': kafka_creds['api_key'],
-    'sasl.password': kafka_creds['api_secret'],
+    'sasl.username': os.getenv('KAFKA_API_KEY'),
+    'sasl.password': os.getenv('KAFKA_API_SECRET'),
 }
 
 producer = Producer(kafka_config)
-print(" Kafka producer initialized!")
+logger.info("Kafka producer initialized!")
 
 stats_lock = Lock()
 rate_limit_lock = Lock()
 
 def delivery_report(err, msg):
     if err is not None:
-        print(f' Delivery failed: {err}')
+        logger.error(f'Delivery failed: {err}')
 
 def produce_message(key, value):
     producer.produce(
@@ -58,7 +62,7 @@ def fetch_subreddit(subreddit_name, posts_per_subreddit, comments_per_post, stat
     local_posts = 0
     local_comments = 0
     
-    print(f"[{subreddit_name}] Starting fetch...")
+    logger.info(f"[{subreddit_name}] Starting fetch...")
     
     try:
         subreddit = reddit.subreddit(subreddit_name)
@@ -115,24 +119,24 @@ def fetch_subreddit(subreddit_name, posts_per_subreddit, comments_per_post, stat
                     local_comments += 1
                     
             except TooManyRequests:
-                print(f"    [{subreddit_name}] Rate limit hit! Waiting 60s...")
+                logger.warning(f"[{subreddit_name}] Rate limit hit! Waiting 60s...")
                 time.sleep(60)
             except Exception as e:
-                print(f"    [{subreddit_name}] Error fetching comments: {e}")
+                logger.error(f"[{subreddit_name}] Error fetching comments: {e}")
             
             producer.poll(0)
 
     except TooManyRequests:
-        print(f"[{subreddit_name}] Rate limit hit! Waiting 60s...")
+        logger.warning(f"[{subreddit_name}] Rate limit hit! Waiting 60s...")
         time.sleep(60)
     except Exception as e:
-        print(f"[{subreddit_name}] Error: {e}")
+        logger.error(f"[{subreddit_name}] Error: {e}")
     
     with stats_lock:
         stats_dict['total_posts'] += local_posts
         stats_dict['total_comments'] += local_comments
     
-    print(f" [{subreddit_name}], Posts: {local_posts}, Comments: {local_comments}")
+    logger.info(f"[{subreddit_name}] Complete - Posts: {local_posts}, Comments: {local_comments}")
 
 def fetch_and_produce_threaded(subreddit_names, posts_per_subreddit, comments_per_post):
     if isinstance(subreddit_names, str):
@@ -162,31 +166,70 @@ def fetch_and_produce_threaded(subreddit_names, posts_per_subreddit, comments_pe
 
 
 if __name__ == "__main__":
-    print("="*60)
-    print("Reddit Producer with Threading (Posts + Comments)")
-    print("="*60)
+    logger.info("="*60)
+    logger.info("Reddit Producer - Single Cycle Mode (GitHub Actions)")
+    logger.info("="*60)
     
-
     with open('config.yaml', 'r') as f:
         config = yaml.safe_load(f)
     
-    subreddits = config['subreddits']
-    POSTS_LIMIT = config['posts_per_subreddit']
-    COMMENTS_LIMIT = config['comments_per_post']
-
-    start_time = time.time()
+    ALL_SUBREDDITS = config['subreddits']
+    BATCH_SIZE = config['batch_size']
+    POSTS_PER_SUBREDDIT = config['posts_per_subreddit']
+    COMMENTS_PER_POST = config['comments_per_post']
     
-    total_posts, total_comments = fetch_and_produce_threaded(subreddits, posts_per_subreddit=POSTS_LIMIT, comments_per_post=COMMENTS_LIMIT)
+    total_batches = (len(ALL_SUBREDDITS) + BATCH_SIZE - 1) // BATCH_SIZE
     
-    elapsed = time.time() - start_time
+    overall_start = time.time()
+    grand_total_posts = 0
+    grand_total_comments = 0
     
-    print(f"\n Total time: {elapsed:.2f} seconds")
-    print(f" Total posts produced: {total_posts}")
-    print(f" Total comments produced: {total_comments}")
-    print(f" Grand total: {total_posts + total_comments}")
-    print(" Producer finished!")
+    for batch_number in range(total_batches):
+        try:
+            start_idx = batch_number * BATCH_SIZE
+            end_idx = min(start_idx + BATCH_SIZE, len(ALL_SUBREDDITS))
+            current_batch = ALL_SUBREDDITS[start_idx:end_idx]
+            
+            logger.info(f"\n{'='*60}")
+            logger.info(f"Batch #{batch_number + 1}/{total_batches} - Processing: {', '.join(current_batch)}")
+            logger.info(f"{'='*60}")
+            
+            start_time = time.time()
+            
+            total_posts, total_comments = fetch_and_produce_threaded(
+                current_batch, 
+                posts_per_subreddit=POSTS_PER_SUBREDDIT, 
+                comments_per_post=COMMENTS_PER_POST
+            )
+            
+            elapsed = time.time() - start_time
+            grand_total_posts += total_posts
+            grand_total_comments += total_comments
+            
+            logger.info(f"\nBatch #{batch_number + 1} Complete:")
+            logger.info(f"  Time: {elapsed:.2f}s")
+            logger.info(f"  Posts: {total_posts}")
+            logger.info(f"  Comments: {total_comments}")
+            logger.info(f"  Total: {total_posts + total_comments}")
+            
+            if batch_number < total_batches - 1:
+                logger.info(f"\nWaiting 60s before next batch...")
+                time.sleep(60)
+                
+        except Exception as e:
+            logger.error(f"Critical error in batch {batch_number + 1}: {e}", exc_info=True)
+            continue
     
-    if total_posts == len(subreddits) * POSTS_LIMIT:
-        print(f" SUCCESS: Got all {total_posts} expected posts!")
-    else:
-        print(f" WARNING: Expected {len(subreddits) * POSTS_LIMIT} posts, got {total_posts}")
+    total_time = time.time() - overall_start
+    
+    logger.info(f"\n{'='*60}")
+    logger.info("CYCLE COMPLETE - FINAL SUMMARY")
+    logger.info(f"{'='*60}")
+    logger.info(f"Total time: {total_time:.2f}s ({total_time/60:.1f} minutes)")
+    logger.info(f"Total posts: {grand_total_posts}")
+    logger.info(f"Total comments: {grand_total_comments}")
+    logger.info(f"Grand total: {grand_total_posts + grand_total_comments}")
+    logger.info(f"Processed {len(ALL_SUBREDDITS)} subreddits in {total_batches} batches")
+    logger.info("="*60)
+    
+    producer.flush()
