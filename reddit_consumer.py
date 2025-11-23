@@ -3,21 +3,29 @@ from datetime import datetime, timezone
 from confluent_kafka import Consumer, KafkaError
 from pymongo import MongoClient
 from nltk.sentiment import SentimentIntensityAnalyzer
-from transformers import pipeline
 import nltk
 import os
 from dotenv import load_dotenv
+import logging
+from logging.handlers import RotatingFileHandler
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        RotatingFileHandler('producer.log', maxBytes=10*1024*1024, backupCount=5),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 try:
     vader = SentimentIntensityAnalyzer()
 except:
     nltk.download('vader_lexicon')
     vader = SentimentIntensityAnalyzer()
-
-transformer = pipeline('sentiment-analysis',
-                      model="cardiffnlp/twitter-roberta-base-sentiment-latest")
 
 kafka_config = {
     'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS'),
@@ -37,23 +45,18 @@ try:
     post = db['posts']
     comment = db['comments']
 except Exception as e:
-    print(f"Error connecting to MongoDB: {e}")
+    logger.error(f"Error connecting to MongoDB: {e}")
 
 post.create_index('post_id', unique=True)
 post.create_index('timestamp')
 post.create_index('subreddit')
 post.create_index('score')
-post.create_index('transformer_label')
 
 comment.create_index('comment_id', unique=True)
 comment.create_index('post_id')
 comment.create_index('timestamp')
 comment.create_index('subreddit')
 comment.create_index('score')
-comment.create_index('transformer_label')
-
-print(f"Connected to MongoDB: {db.name}.{post.name}")
-print(f"Connected to MongoDB: {db.name}.{comment.name}")
 
 new_posts_added = 0
 new_comments_added = 0
@@ -69,16 +72,9 @@ def analyze_sentiment(text):
 
     try:
         vader_score = vader.polarity_scores(text)['compound']
-        trans_result = transformer(text[:512])[0]
-        trans_label = trans_result['label']
-        trans_score = trans_result['score']
-        return {
-            'vader_score': vader_score,
-            'transformer_label': trans_label,
-            'transformer_score': trans_score
-        }
+        return {'vader_score': vader_score}
     except Exception as e:
-        print(f"Error analyzing sentiment: {e}")
+        logger.error(f"Error analyzing sentiment: {e}")
         return None
 
 
@@ -100,7 +96,7 @@ def process_message(message):
 
         if sentiment is None:
             identifier = data.get('post_id') or data.get('comment_id')
-            print(f"SKIPPED (No sentiment): {identifier}")
+            logger.info(f"SKIPPED (No sentiment): {identifier}")
 
             if msg_type == 'post':
                 error_posts += 1
@@ -111,8 +107,6 @@ def process_message(message):
 
         data.update({
             'vader_score': sentiment['vader_score'],
-            'transformer_label': sentiment['transformer_label'],
-            'transformer_score': sentiment['transformer_score'],
             'processed_at': datetime.now(timezone.utc).isoformat()
         })
 
@@ -124,10 +118,10 @@ def process_message(message):
             )
 
             if result.upserted_id:
-                print(f"NEW POST: {data['post_id']} | r/{data['subreddit']}")
+                logger.info(f"NEW POST: {data['post_id']} | r/{data['subreddit']}")
                 new_posts_added += 1
             else:
-                print(f"UPDATED POST: {data['post_id']}")
+                logger.info(f"UPDATED POST: {data['post_id']}")
                 updated_posts += 1
 
         else:  
@@ -138,10 +132,10 @@ def process_message(message):
             )
 
             if result.upserted_id:
-                print(f"NEW COMMENT: {data['comment_id']} | r/{data['subreddit']}")
+                logger.info(f"NEW COMMENT: {data['comment_id']} | r/{data['subreddit']}")   
                 new_comments_added += 1
             else:
-                print(f"UPDATED COMMENT: {data['comment_id']}")
+                logger.info(f"UPDATED COMMENT: {data['comment_id']}")
                 updated_comments += 1
 
         return True
@@ -155,7 +149,7 @@ def process_message(message):
             identifier = None
             msg_type = None
 
-        print(f"ERROR processing item {identifier}: {e}")
+        logger.error(f"ERROR processing item {identifier}: {e}")
 
         if msg_type == 'post':
             error_posts += 1
@@ -196,17 +190,20 @@ def consume_messages():
         consumer.close()
         mongo_client.close()
 
-        print("\n=============================")
-        print("       MONGO SUMMARY")
-        print("=============================")
-        print(f"New posts added:       {new_posts_added}")
-        print(f"Updated posts:         {updated_posts}")
-        print(f"Post errors:           {error_posts}")
-        print("")
-        print(f"New comments added:    {new_comments_added}")
-        print(f"Updated comments:      {updated_comments}")
-        print(f"Comment errors:        {error_comments}")
-        print("=============================")
+        logger.info("\n=============================")
+        logger.info("       MONGO SUMMARY")
+        logger.info("=============================")
+        logger.info(f"New posts added:       {new_posts_added}")
+        logger.info(f"Updated posts:         {updated_posts}")
+        logger.info(f"Post errors:           {error_posts}")
+        logger.info("")
+        logger.info(f"New comments added:    {new_comments_added}")
+        logger.info(f"Updated comments:      {updated_comments}")
+        logger.info(f"Comment errors:        {error_comments}")
+        logger.info("=============================")
+
+
+    
 
 
 if __name__ == "__main__":

@@ -1,0 +1,44 @@
+name: Reddit Data Consumer
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Run every 30 minutes
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  consume-kafka-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          pip install confluent-kafka pymongo python-dotenv nltk
+      
+      - name: Create .env file
+        run: |
+          cat > .env << EOF
+          KAFKA_BOOTSTRAP_SERVERS=${{ secrets.KAFKA_BOOTSTRAP_SERVERS }}
+          KAFKA_API_KEY=${{ secrets.KAFKA_API_KEY }}
+          KAFKA_API_SECRET=${{ secrets.KAFKA_API_SECRET }}
+          MONGO_CONNECTION_STRING=${{ secrets.MONGO_CONNECTION_STRING }}
+          EOF
+      
+      - name: Run Reddit Consumer
+        run: python reddit_consumer.py
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consumer-logs
+          path: consumer.log
+          retention-days: 7
