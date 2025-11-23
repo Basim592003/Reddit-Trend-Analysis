@@ -2,8 +2,8 @@ name: Reddit Data Consumer
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # Run every 30 minutes
-  workflow_dispatch:  # Allow manual trigger
+    - cron: '*/15 * * * *'  
+  workflow_dispatch: 
 
 jobs:
   consume-kafka-data:
