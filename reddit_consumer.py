@@ -51,12 +51,14 @@ post.create_index('post_id', unique=True)
 post.create_index('timestamp')
 post.create_index('subreddit')
 post.create_index('score')
+post.create_index('timestamp', expireAfterSeconds=604800) 
 
 comment.create_index('comment_id', unique=True)
 comment.create_index('post_id')
 comment.create_index('timestamp')
 comment.create_index('subreddit')
 comment.create_index('score')
+comment.create_index('timestamp', expireAfterSeconds=604800)  
 
 new_posts_added = 0
 new_comments_added = 0
@@ -72,7 +74,19 @@ def analyze_sentiment(text):
 
     try:
         vader_score = vader.polarity_scores(text)['compound']
-        return {'vader_score': vader_score}
+        
+        if vader_score >= 0.05:
+            sentiment_label = 'positive'
+        elif vader_score <= -0.05:
+            sentiment_label = 'negative'
+        else:
+            sentiment_label = 'neutral'
+        
+        return {
+            'vader_score': vader_score,
+            'sentiment_label': sentiment_label,
+            'sentiment_confidence': abs(vader_score)
+        }
     except Exception as e:
         logger.error(f"Error analyzing sentiment: {e}")
         return None
@@ -107,6 +121,8 @@ def process_message(message):
 
         data.update({
             'vader_score': sentiment['vader_score'],
+            'transformer_label': sentiment['sentiment_label'],
+            'transformer_confidence': sentiment['sentiment_confidence'],
             'processed_at': datetime.now(timezone.utc).isoformat()
         })
 
