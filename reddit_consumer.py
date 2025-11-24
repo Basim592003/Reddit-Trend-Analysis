@@ -48,14 +48,12 @@ except Exception as e:
     logger.error(f"Error connecting to MongoDB: {e}")
 
 post.create_index('post_id', unique=True)
-post.create_index('timestamp')
 post.create_index('subreddit')
 post.create_index('score')
 post.create_index('timestamp', expireAfterSeconds=604800) 
 
 comment.create_index('comment_id', unique=True)
 comment.create_index('post_id')
-comment.create_index('timestamp')
 comment.create_index('subreddit')
 comment.create_index('score')
 comment.create_index('timestamp', expireAfterSeconds=604800)  
