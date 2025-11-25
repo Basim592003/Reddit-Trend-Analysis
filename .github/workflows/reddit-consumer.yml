@@ -21,7 +21,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          pip install confluent-kafka pymongo python-dotenv nltk
+          pip install -r requirements.txt
       
       - name: Create .env file
         run: |
@@ -33,7 +33,7 @@ jobs:
           EOF
       
       - name: Run Reddit Consumer
-        run: python reddit_consumer.py
+        run: python consumer/reddit_consumer.py
       
       - name: Upload logs
         if: always()

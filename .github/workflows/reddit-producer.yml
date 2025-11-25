@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install praw confluent-kafka pyyaml python-dotenv
+          pip install -r requirements.txt
 
       - name: Create .env file
         run: |
@@ -36,7 +36,7 @@ jobs:
           EOF
 
       - name: Run Reddit Producer
-        run: python reddit_producer.py
+        run: python producer / reddit_producer.py
 
       - name: Upload logs
         if: always()
