@@ -173,7 +173,7 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(script_dir, 'config.yaml')
 
-    with open('config.yaml', 'r') as f:
+    with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
     
     ALL_SUBREDDITS = config['subreddits']
