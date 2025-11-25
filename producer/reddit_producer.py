@@ -170,6 +170,9 @@ if __name__ == "__main__":
     logger.info("Reddit Producer - Single Cycle Mode (GitHub Actions)")
     logger.info("="*60)
     
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(script_dir, 'config.yaml')
+
     with open('config.yaml', 'r') as f:
         config = yaml.safe_load(f)
     
