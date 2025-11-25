@@ -1,0 +1,4 @@
+confluent_kafka==2.12.0
+nltk==3.9.2
+pymongo==4.15.4
+python-dotenv==1.2.1
