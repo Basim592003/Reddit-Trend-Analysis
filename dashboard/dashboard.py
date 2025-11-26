@@ -195,7 +195,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.title("Real-Time Reddit Sentiment Analytics")
-st.markdown("### Executive Summary (Global Data)")
+st.markdown("### Executive Summary (ddddddddddddddd)")
 
 total_docs = len(df)
 avg_vader = df['vader_score'].mean()
