@@ -1,8 +1,4 @@
-reddit_credentials.txt
-kafka_credentials.txt
-mongo_credentials.txt
-kafka resource.txt
-
+*.txt
 .venv/
 venv/
 env/
@@ -26,3 +22,4 @@ iteration*.pdf
 
 *.key
 *.env
+.streamlit/
