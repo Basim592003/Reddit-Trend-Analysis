@@ -1,4 +1,8 @@
-*.txt
+reddit_credentials.txt
+kafka_credentials.txt
+mongo_credentials.txt
+kafka resource.txt
+
 .venv/
 venv/
 env/
