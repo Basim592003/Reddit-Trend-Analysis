@@ -13,7 +13,7 @@ try:
     HAS_AUTOREFRESH = True
 except ImportError:
     HAS_AUTOREFRESH = False
-    st.warning("Install 'streamlit-autorefresh' for automatic dashboard updates: `pip install streamlit-autorefresh`")
+    st.warning("Install 'streamlit-autorefresh' for automatic dashboard updates: pip install streamlit-autorefresh")
 
 st.set_page_config(layout="wide", page_title="Reddit Analytics Suite")
 logging.basicConfig(level=logging.INFO)
@@ -141,7 +141,7 @@ if 'last_manual_refresh' not in st.session_state:
     st.session_state.last_manual_refresh = None
 
 with st.sidebar:
-    st.markdown("### 🎛️ Dashboard Controls")
+    st.markdown("### 🎛 Dashboard Controls")
     
     if st.button("🔄 Refresh Data Now", use_container_width=True, type="primary"):
         st.cache_data.clear()
@@ -150,13 +150,13 @@ with st.sidebar:
         st.rerun()
     
     st.markdown("---")
-    st.markdown("### ℹ️ Refresh Info")
+    st.markdown("### ℹ Refresh Info")
     
     if HAS_AUTOREFRESH:
         st.success("✅ Auto-refresh: Enabled")
         st.caption("Dashboard refreshes every 5 minutes")
     else:
-        st.info("ℹ️ Auto-refresh: Disabled")
+        st.info("ℹ Auto-refresh: Disabled")
         st.caption("Install streamlit-autorefresh to enable")
     
     st.caption(f"Manual refreshes: {st.session_state.refresh_count}")
@@ -175,10 +175,10 @@ with st.sidebar:
         st.caption(str(e))
     
     st.markdown("---")
-    st.markdown("### ⚙️ Settings")
-    st.caption("**Cache TTL:** 5 minutes")
-    st.caption("**Data Limit:** 3000 items per collection")
-    st.caption("**Update Frequency:** Every 5 minutes")
+    st.markdown("### ⚙ Settings")
+    st.caption("*Cache TTL:* 5 minutes")
+    st.caption("*Data Limit:* 3000 items per collection")
+    st.caption("*Update Frequency:* Every 5 minutes")
 
 df, load_time = load_data()
 
@@ -312,7 +312,7 @@ with c_right:
 
 subs_list = sorted(df['subreddit'].unique())
 st.caption("Monitored Subreddits:")
-st.markdown(" ".join([f"`r/{s}`" for s in subs_list]))
+st.markdown(" ".join([f"r/{s}" for s in subs_list]))
 
 st.markdown("---")
 
@@ -334,7 +334,7 @@ with st.container():
         selected_types = st.multiselect("Content Type", ['Post', 'Comment'], default=['Post', 'Comment'])
 
     with f_col3:
-        st.markdown("**Sentiment**")
+        st.markdown("*Sentiment*")
         chk_pos = st.checkbox("Positive", value=True)
         chk_neu = st.checkbox("Neutral", value=True)
         chk_neg = st.checkbox("Negative", value=True)
@@ -375,9 +375,9 @@ else:
         with st.container():
             c1, c2 = st.columns([4, 1])
             with c1:
-                st.markdown(f"**r/{row['subreddit']}** • u/{row['author']} • *{row['type']}*")
+                st.markdown(f"*r/{row['subreddit']}* • u/{row['author']} • {row['type']}")
             with c2:
-                st.markdown(f":{card_color}[**{row['transformer_label'].upper()}**]")
+                st.markdown(f":{card_color}[{row['transformer_label'].upper()}]")
 
             if row['type'] == 'Post':
                 st.markdown(f"### {row['title']}")
@@ -387,7 +387,7 @@ else:
                 st.markdown(f"{row['body_preview']}")
 
             s1, s2, s3 = st.columns([2, 2, 2])
-            s1.markdown(f"**VADER:** {row['vader_score']:.3f}")
+            s1.markdown(f"*VADER:* {row['vader_score']:.3f}")
             
             link = row['link']
             if link and not link.startswith('http'):
