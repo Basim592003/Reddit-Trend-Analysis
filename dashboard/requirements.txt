@@ -3,3 +3,4 @@ pandas>=2.0.0
 plotly>=5.17.0
 pymongo>=4.5.0
 streamlit-autorefresh>=1.0.1 
+pytz
