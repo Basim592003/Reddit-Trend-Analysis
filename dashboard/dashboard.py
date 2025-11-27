@@ -15,8 +15,7 @@ try:
 except ImportError:
     HAS_AUTOREFRESH = False
     st.warning("Install 'streamlit-autorefresh' for automatic dashboard updates: `pip install streamlit-autorefresh`")
-st.cache_data.clear()
-st.cache_resource.clear()
+
 # --- 1. SETUP & CONFIGURATION ---
 st.set_page_config(layout="wide", page_title="Reddit Analytics Suite")
 logging.basicConfig(level=logging.INFO)
@@ -145,7 +144,11 @@ def load_data():
     # Return dataframe and load timestamp
     eastern = pytz.timezone('America/New_York')
     load_time = datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')
-    st.sidebar.write(f"DEBUG - Current time: {load_time}")
+
+    if not df.empty:
+        st.sidebar.write(f"Sample MongoDB timestamp: {df['timestamp'].iloc[0]}")
+        st.sidebar.write(f"Timezone: {df['timestamp'].iloc[0].tz}")
+        
     return df, load_time
 
 # Initialize session state for tracking
