@@ -7,6 +7,7 @@ import os
 import logging
 import time
 from datetime import datetime
+import pytz
 
 # Install this package: pip install streamlit-autorefresh
 try:
@@ -128,6 +129,8 @@ def load_data():
     # 1. Convert 'timestamp' string to Datetime object
     if 'timestamp' in df.columns:
         df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce', utc=True)
+        eastern = pytz.timezone('America/New_York')
+        df['timestamp'] = df['timestamp'].dt.tz_convert(eastern)
     
     # 2. Ensure numerical scores are floats
     df['vader_score'] = pd.to_numeric(df['vader_score'], errors='coerce').fillna(0.0)
@@ -140,7 +143,8 @@ def load_data():
     df = df.dropna(subset=['timestamp'])
     
     # Return dataframe and load timestamp
-    load_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    eastern = pytz.timezone('America/New_York')
+    load_time = datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')
     
     return df, load_time
 
