@@ -144,10 +144,6 @@ def load_data():
     # Return dataframe and load timestamp
     eastern = pytz.timezone('America/New_York')
     load_time = datetime.now(eastern).strftime('%Y-%m-%d %H:%M:%S')
-
-    if not df.empty:
-        st.sidebar.write(f"Sample MongoDB timestamp: {df['timestamp'].iloc[0]}")
-        st.sidebar.write(f"Timezone: {df['timestamp'].iloc[0].tz}")
         
     return df, load_time
 
