@@ -162,7 +162,8 @@ with st.sidebar:
     if st.button("Refresh Data Now", use_container_width=True, type="primary"):
         st.cache_data.clear()
         st.session_state.refresh_count += 1
-        st.session_state.last_manual_refresh = datetime.now().strftime('%H:%M:%S')
+        eastern = pytz.timezone('America/New_York')
+        st.session_state.last_manual_refresh = datetime.now(eastern).strftime('%H:%M:%S')
         st.rerun()
     
     st.markdown("---")
