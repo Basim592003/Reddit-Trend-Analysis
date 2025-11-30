@@ -103,7 +103,7 @@ def load_data():
     db = client[DB_NAME]
     
     # Fetch Posts
-    posts = list(db['posts'].find().limit(3000).sort("timestamp", -1))
+    posts = list(db['posts'].find().sort("timestamp", -1))
     df_posts = pd.DataFrame(posts)
     if not df_posts.empty:
         df_posts['type'] = 'Post'
@@ -111,7 +111,7 @@ def load_data():
         df_posts['body_preview'] = df_posts.get('selftext', '')
 
     # Fetch Comments
-    comments = list(db['comments'].find().limit(3000).sort("timestamp", -1))
+    comments = list(db['comments'].find().sort("timestamp", -1))
     df_comments = pd.DataFrame(comments)
     if not df_comments.empty:
         df_comments['type'] = 'Comment'
