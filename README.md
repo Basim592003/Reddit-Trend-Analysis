@@ -12,68 +12,9 @@ This project builds an end-to-end data pipeline that:
 - Visualizes trends through an interactive Streamlit dashboard
 
 ## Architecture
-```mermaid
-graph LR
-    subgraph data_src["Data Source"]
-        reddit["Reddit APISocial Media Platform"]
-    end
-    
-    subgraph ingestion["Data Ingestion"]
-        producer["Python ProducerPRAW LibraryMulti-threaded"]
-    end
-    
-    subgraph broker["Message Broker"]
-        kafka["Apache KafkaConfluent CloudSASL_SSL"]
-    end
-    
-    subgraph processing["Stream Processing"]
-        consumer["Python ConsumerNLTK VADERSentiment Analysis"]
-    end
-    
-    subgraph storage["Data Storage"]
-        mongo["MongoDB AtlasNoSQL DatabaseTTL Indexes"]
-    end
-    
-    subgraph vis["Visualization"]
-        streamlit["Streamlit DashboardReal-time AnalyticsInteractive UI"]
-    end
-    
-    subgraph automation["Automation"]
-        github["GitHub ActionsCI/CD PipelineScheduled Runs"]
-    end
-    
-    subgraph user["End User"]
-        enduser["User InterfaceWeb Browser"]
-    end
-    
-    reddit -->|"Fetch posts& comments"| producer
-    producer -->|"Streammessages"| kafka
-    kafka -->|"Encryptedtransport"| consumer
-    consumer -->|"Store sentimentscores"| mongo
-    mongo -->|"Querydata"| streamlit
-    streamlit -->|"Displayinsights"| enduser
-    
-    github -.->|"Every 30min"| producer
-    github -.->|"Every 15min"| consumer
-    
-    classDef sourceStyle fill:#e8f5e9,stroke:#4caf50,stroke-width:3px,color:#1b5e20
-    classDef ingestStyle fill:#e3f2fd,stroke:#2196f3,stroke-width:3px,color:#0d47a1
-    classDef brokerStyle fill:#fff9c4,stroke:#fbc02d,stroke-width:3px,color:#f57f17
-    classDef processStyle fill:#fce4ec,stroke:#e91e63,stroke-width:3px,color:#880e4f
-    classDef storageStyle fill:#f3e5f5,stroke:#9c27b0,stroke-width:3px,color:#4a148c
-    classDef visStyle fill:#ffe0b2,stroke:#ff9800,stroke-width:3px,color:#e65100
-    classDef autoStyle fill:#b3e5fc,stroke:#03a9f4,stroke-width:3px,color:#01579b
-    classDef userStyle fill:#eceff1,stroke:#607d8b,stroke-width:3px,color:#263238
-    
-    class reddit sourceStyle
-    class producer ingestStyle
-    class kafka brokerStyle
-    class consumer processStyle
-    class mongo storageStyle
-    class streamlit visStyle
-    class github autoStyle
-    class enduser userStyle
-```
+## Architecture
+
+![Architecture Diagram](architecture.png)
 
 
 ## Requirements
@@ -188,52 +129,6 @@ GitHub Actions workflows run automatically:
 
 Manual triggers available via `workflow_dispatch`
 
-## Project Structure
-```
-PROJECT/
-├── producer/
-│   └── reddit_producer.py
-├── consumer/
-│   └── reddit_consumer.py
-├── .github/
-│   └── workflows/
-│       ├── producer.yml
-│       └── consumer.yml
-├── reports/
-├── dashboard.py
-├── config.yaml
-├── requirements.txt
-├── .env
-└── README.md
-```
-
-## Results
-
-### Sample Output
-
-**Producer Console:**
-```
-POSTED: t3_abc123 | r/technology | Score: 245
-POSTED COMMENT: t1_def456 | r/technology
-```
-
-**Consumer Summary:**
-```
-=============================
-       MONGO SUMMARY
-=============================
-New posts added:       127
-Updated posts:         45
-New comments added:    892
-=============================
-```
-
-### Dashboard Features
-- Real-time sentiment distribution
-- Trending subreddits
-- Top positive/negative posts
-- Historical sentiment trends
-
 ## Troubleshooting
 
 **Reddit API Rate Limits:**
@@ -253,12 +148,3 @@ New comments added:    892
 - Add more sentiment models (transformer-based)
 - Implement real-time alerts for viral posts
 - Expand to multiple social media platforms
-- Deploy dashboard to cloud platform
-
-## Contributors
-
-Shaikh Basim - Northeastern University
-
-## License
-
-MIT License
