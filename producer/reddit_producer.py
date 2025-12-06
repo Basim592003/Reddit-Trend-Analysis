@@ -168,7 +168,7 @@ def fetch_and_produce_threaded(subreddit_names, posts_per_subreddit, comments_pe
 if __name__ == "__main__":
     logger.info("="*60)
     logger.info("Reddit Producer - Single Cycle Mode (GitHub Actions)")
-    logger.info("="*601)
+    logger.info("="*60)
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(script_dir, 'config.yaml')
