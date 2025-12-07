@@ -89,14 +89,14 @@ def load_data():
     client = get_mongo_client()
     db = client[DB_NAME]
     
-    posts = list(db['posts'].find().sort("timestamp", -1))
+    posts = list(db['posts'].find().limit(500).sort("timestamp", -1))
     df_posts = pd.DataFrame(posts)
     if not df_posts.empty:
         df_posts['type'] = 'Post'
         df_posts['link'] = df_posts.get('permalink', df_posts.get('url', ''))
         df_posts['body_preview'] = df_posts.get('selftext', '')
 
-    comments = list(db['comments'].find().sort("timestamp", -1))
+    comments = list(db['comments'].find().limit(500).sort("timestamp", -1))
     df_comments = pd.DataFrame(comments)
     if not df_comments.empty:
         df_comments['type'] = 'Comment'
