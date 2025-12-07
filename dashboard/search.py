@@ -2,14 +2,17 @@ import praw
 import pandas as pd
 from datetime import datetime
 import pytz
-from nltk.sentiment import SentimentIntensityAnalyzer
-from transformers import pipeline
 import streamlit as st
 import os
-# from dotenv import load_dotenv
+import nltk
 
-# load_dotenv(dotenv_path='../.env')
+try:
+    nltk.data.find('vader_lexicon')
+except LookupError:
+    nltk.download('vader_lexicon', quiet=True)
 
+from nltk.sentiment import SentimentIntensityAnalyzer
+from transformers import pipeline
 
 def load_reddit_credentials():
     if hasattr(st, 'secrets') and 'reddit' in st.secrets:
@@ -23,23 +26,8 @@ def load_reddit_credentials():
             st.error(f"Error loading Reddit secrets: {e}")
             return None
     
-    # try:
-    #     client_id = os.getenv('REDDIT_CLIENT_ID')
-    #     client_secret = os.getenv('REDDIT_CLIENT_SECRET')
-    #     user_agent = os.getenv('REDDIT_USER_AGENT')
-        
-    #     if not all([client_id, client_secret, user_agent]):
-    #         st.error("Reddit credentials not found in environment variables!")
-    #         return None
-            
-    #     return {
-    #         'client_id': client_id,
-    #         'client_secret': client_secret,
-    #         'user_agent': user_agent
-    #     }
-    # except Exception as e:
-    #     st.error(f"Error loading reddit credentials: {e}")
-    #     return None
+    st.error("Reddit credentials not found! Please configure Streamlit secrets.")
+    return None
     
 @st.cache_resource
 def get_reddit_client():
@@ -75,7 +63,7 @@ def analyze_sentiment(text, vader, transformer):
     
     return vader_score, transformer_label
 
-def fetch_and_analyze_subreddit(subreddit_name, num_posts=10, sort_by='new'):
+def fetch_and_analyze_subreddit(subreddit_name, num_posts=10, sort_by='hot'):
     reddit = get_reddit_client()
     if not reddit:
         return None
@@ -85,7 +73,6 @@ def fetch_and_analyze_subreddit(subreddit_name, num_posts=10, sort_by='new'):
     
     try:
         subreddit = reddit.subreddit(subreddit_name)
-        
         posts = getattr(subreddit, sort_by)(limit=num_posts)
         
         for post in posts:
@@ -114,4 +101,3 @@ def fetch_and_analyze_subreddit(subreddit_name, num_posts=10, sort_by='new'):
     except Exception as e:
         st.error(f"Error fetching data from r/{subreddit_name}: {e}")
         return None
-    
