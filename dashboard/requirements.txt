@@ -5,3 +5,4 @@ pymongo>=4.5.0
 streamlit-autorefresh>=1.0.1 
 pytz
 praw
+nltk
