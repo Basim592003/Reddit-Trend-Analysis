@@ -1,9 +1,19 @@
 # Reddit Trend Analysis
+Real time sentiment analysis pipeline for Reddit data using Kafka streaming, MongoDB storage, and interactive dashboards.
 
-Real-time sentiment analysis pipeline for Reddit data using Kafka streaming, MongoDB storage, and interactive dashboards.
+## Table of Contents
+- [Project Goal](#project-goal)
+- [Architecture](#architecture)
+- [Live Dashboard](#live-dashboard)
+- [Requirements](#requirements)
+- [Setup Instructions](#setup-instructions)
+- [Running the Pipeline](#running-the-pipeline)
+- [Methodology](#methodology)
+- [Automation](#automation)
+- [Troubleshooting](#troubleshooting)
+- [Future Enhancements](#future-enhancements)
 
 ## Project Goal
-
 This project builds an end-to-end data pipeline that:
 - Fetches Reddit posts and comments in real-time
 - Streams data through Apache Kafka
@@ -12,12 +22,16 @@ This project builds an end-to-end data pipeline that:
 - Visualizes trends through an interactive Streamlit dashboard
 
 ## Architecture
-## Architecture
-
 ![Architecture Diagram](architecture.png)
 
+## Live Dashboard
+**Access the dashboard here:** (https://reddit-trend-analysis.streamlit.app/)
+
+No installation required! View real-time Reddit sentiment analysis directly in your browser.
 
 ## Requirements
+
+> **Note:** These requirements are only needed if you want to run the data pipeline locally. The dashboard is publicly accessible via the link above.
 
 ### Software
 - Python 3.10+
@@ -32,6 +46,8 @@ pip install -r requirements.txt
 
 ## Setup Instructions
 
+> **For developers only:** Follow these steps to run the complete pipeline locally.
+
 ### 1. Clone Repository
 ```bash
 git clone https://github.com/Basim592003/Reddit-Trend-Analysis.git
@@ -45,13 +61,7 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 3. Download NLTK Data
-```bash
-python -c "import nltk; nltk.download('vader_lexicon')"
-```
-
-### 4. Configure Environment Variables
-
+### 3. Configure Environment Variables
 Create `.env` file in root directory:
 ```
 REDDIT_CLIENT_ID=your_client_id
@@ -65,8 +75,7 @@ KAFKA_API_SECRET=your_api_secret
 MONGO_CONNECTION_STRING=your_mongo_connection_string
 ```
 
-### 5. Configure Subreddits
-
+### 4. Configure Subreddits
 Edit `config.yaml` to specify subreddits to monitor:
 ```yaml
 subreddits:
@@ -77,23 +86,22 @@ subreddits:
 
 ## Running the Pipeline
 
-### Step 1: Start Producer
+**Step 1: Start Producer**
 ```bash
 cd producer
 python reddit_producer.py
 ```
 
-### Step 2: Start Consumer
+**Step 2: Start Consumer**
 ```bash
 cd consumer
 python reddit_consumer.py
 ```
 
-### Step 3: Launch Dashboard
+**Step 3: Launch Dashboard Locally**
 ```bash
-python dashboard.py
+streamlit run dashboard.py
 ```
-
 ## Methodology
 
 ### Data Collection
@@ -124,8 +132,8 @@ python dashboard.py
 ## Automation
 
 GitHub Actions workflows run automatically:
-- **Producer**: Every 30 minutes
-- **Consumer**: Every 15 minutes
+- **Producer**: Every 60 minutes
+- **Consumer**: Every 30 minutes
 
 Manual triggers available via `workflow_dispatch`
 
