@@ -6,9 +6,9 @@ from nltk.sentiment import SentimentIntensityAnalyzer
 from transformers import pipeline
 import streamlit as st
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
-load_dotenv(dotenv_path='../.env')
+# load_dotenv(dotenv_path='../.env')
 
 
 def load_reddit_credentials():
@@ -23,23 +23,23 @@ def load_reddit_credentials():
             st.error(f"Error loading Reddit secrets: {e}")
             return None
     
-    try:
-        client_id = os.getenv('REDDIT_CLIENT_ID')
-        client_secret = os.getenv('REDDIT_CLIENT_SECRET')
-        user_agent = os.getenv('REDDIT_USER_AGENT')
+    # try:
+    #     client_id = os.getenv('REDDIT_CLIENT_ID')
+    #     client_secret = os.getenv('REDDIT_CLIENT_SECRET')
+    #     user_agent = os.getenv('REDDIT_USER_AGENT')
         
-        if not all([client_id, client_secret, user_agent]):
-            st.error("Reddit credentials not found in environment variables!")
-            return None
+    #     if not all([client_id, client_secret, user_agent]):
+    #         st.error("Reddit credentials not found in environment variables!")
+    #         return None
             
-        return {
-            'client_id': client_id,
-            'client_secret': client_secret,
-            'user_agent': user_agent
-        }
-    except Exception as e:
-        st.error(f"Error loading reddit credentials: {e}")
-        return None
+    #     return {
+    #         'client_id': client_id,
+    #         'client_secret': client_secret,
+    #         'user_agent': user_agent
+    #     }
+    # except Exception as e:
+    #     st.error(f"Error loading reddit credentials: {e}")
+    #     return None
     
 @st.cache_resource
 def get_reddit_client():
