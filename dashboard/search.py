@@ -115,6 +115,3 @@ def fetch_and_analyze_subreddit(subreddit_name, num_posts=10, sort_by='new'):
         st.error(f"Error fetching data from r/{subreddit_name}: {e}")
         return None
     
-    except Exception as e:
-        st.error(f"Error fetching data from r/{subreddit_name}: {e}")
-        return None
