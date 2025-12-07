@@ -7,3 +7,4 @@ pytz
 praw
 nltk
 transformers
+torch
