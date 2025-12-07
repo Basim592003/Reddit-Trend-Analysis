@@ -4,4 +4,9 @@ plotly>=5.17.0
 pymongo>=4.5.0
 streamlit-autorefresh>=1.0.1 
 pytz
+<<<<<<< HEAD
 praw 
+=======
+praw
+nltk
+>>>>>>> 6d26ee55f7ac7ecc5ea724be1f33889919ff9396
