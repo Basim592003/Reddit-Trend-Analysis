@@ -6,3 +6,4 @@ streamlit-autorefresh>=1.0.1
 pytz 
 praw
 nltk
+transformers
