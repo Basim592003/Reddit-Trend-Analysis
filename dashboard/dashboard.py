@@ -506,11 +506,11 @@ with tab2:
                 if row['selftext']:
                     st.caption(row['selftext'][:200] + "..." if len(row['selftext']) > 200 else row['selftext'])
                 
-                s1, s2, s3, s4 = st.columns([2, 2, 2, 2])
+                s1, s2, s3 = st.columns([2, 2, 2])
                 s1.markdown(f"**VADER:** {row['vader_score']:.3f}")
-                s2.markdown(f"**Score:** {row['score']}")
-                s3.markdown(f"**Comments:** {row['num_comments']}")
-                s4.markdown(f"[View on Reddit]({row['permalink']})")
+                #s2.markdown(f"**Score:** {row['score']}")
+                s2.markdown(f"**Comments:** {row['num_comments']}")
+                s3.markdown(f"[View on Reddit]({row['permalink']})")
                 
                 st.divider()
     elif st.session_state.search_results is not None:
