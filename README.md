@@ -14,12 +14,13 @@ Real time sentiment analysis pipeline for Reddit data using Kafka streaming, Mon
 - [Future Enhancements](#future-enhancements)
 
 ## Project Goal
+
 This project builds an end-to-end data pipeline that:
-- Fetches Reddit posts and comments in real-time
-- Streams data through Apache Kafka
-- Performs sentiment analysis using NLTK VADER
-- Stores processed data in MongoDB
-- Visualizes trends through an interactive Streamlit dashboard
+- Fetches Reddit posts and comments in real-time from multiple subreddits
+- Streams data through Apache Kafka for distributed processing
+- Performs dual sentiment analysis using NLTK VADER and Transformer models
+- Stores processed data in MongoDB with automatic indexing
+- Visualizes trends through an interactive Streamlit dashboard with live search capabilities
 
 ## Architecture
 ![Architecture Diagram](architecture.png)
@@ -151,8 +152,3 @@ Manual triggers available via `workflow_dispatch`
 - Monitor Atlas storage usage
 - Implement TTL indexes for cleanup
 
-## Future Enhancements
-
-- Add more sentiment models (transformer-based)
-- Implement real-time alerts for viral posts
-- Expand to multiple social media platforms
