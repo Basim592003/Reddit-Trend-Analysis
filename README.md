@@ -133,7 +133,7 @@ streamlit run dashboard.py
 ## Automation
 
 GitHub Actions workflows run automatically:
-- **Producer**: Every 60 minutes
+- **Producer**: Every 15 minutes
 - **Consumer**: Every 30 minutes
 
 Manual triggers available via `workflow_dispatch`
