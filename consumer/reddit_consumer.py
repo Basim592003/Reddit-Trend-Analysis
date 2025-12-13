@@ -36,7 +36,7 @@ consumer = Consumer(kafka_config)
 
 try:
     mongo_client = MongoClient(os.getenv('MONGO_CONNECTION_STRING'))
-    db = mongo_client['Local_kafka']
+    db = mongo_client['reddit_sentiment']
     post = db['posts']
     comment = db['comments']
 except Exception as e:
@@ -45,13 +45,13 @@ except Exception as e:
 post.create_index('post_id', unique=True)
 post.create_index('subreddit')
 post.create_index('score')
-post.create_index('timestamp', expireAfterSeconds=604800) 
+post.create_index('timestamp', expireAfterSeconds=int(604800/2.5)) 
 
 comment.create_index('comment_id', unique=True)
 comment.create_index('post_id')
 comment.create_index('subreddit')
 comment.create_index('score')
-comment.create_index('timestamp', expireAfterSeconds=604800)
+comment.create_index('timestamp', expireAfterSeconds=int(604800/2.5))
 
 new_posts_added = 0
 new_comments_added = 0
