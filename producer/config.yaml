@@ -27,3 +27,4 @@ subreddits:
 batch_size: 6
 posts_per_subreddit: 5
 comments_per_post: 5
+CYCLE_DELAY: 300

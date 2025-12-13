@@ -15,6 +15,7 @@ env/
 *.zip
 
 *.docx
+*.pdf 
 
 test.py
 reddit_fetch.py

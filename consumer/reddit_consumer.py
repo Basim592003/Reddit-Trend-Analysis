@@ -28,14 +28,9 @@ except:
     vader = SentimentIntensityAnalyzer()
 
 kafka_config = {
-    'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS'),
-    'security.protocol': 'SASL_SSL',
-    'sasl.mechanisms': 'PLAIN',
-    'sasl.username': os.getenv('KAFKA_API_KEY'),
-    'sasl.password': os.getenv('KAFKA_API_SECRET'),
+    'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092'),
     'group.id': 'reddit-sentiment-consumer',
-    'auto.offset.reset': 'earliest',
-    'enable.auto.commit': True,
+    'auto.offset.reset': 'earliest'
 }
 consumer = Consumer(kafka_config)
 
@@ -56,7 +51,7 @@ comment.create_index('comment_id', unique=True)
 comment.create_index('post_id')
 comment.create_index('subreddit')
 comment.create_index('score')
-comment.create_index('timestamp', expireAfterSeconds=604800)  
+comment.create_index('timestamp', expireAfterSeconds=604800)
 
 new_posts_added = 0
 new_comments_added = 0
@@ -175,30 +170,26 @@ def process_message(message):
 
 def consume_messages():
     consumer.subscribe(['reddit-sentiment'])
-    empty_polls = 0
+    logger.info("Consumer started - waiting for messages...")
 
     try:
         while True:
             msg = consumer.poll(timeout=1.0)
 
             if msg is None:
-                empty_polls += 1
-                if empty_polls > 10:
-                    break
                 continue
-
-            empty_polls = 0
 
             if msg.error():
                 if msg.error().code() == KafkaError._PARTITION_EOF:
-                    break
+                    continue
                 else:
+                    logger.error(f"Kafka error: {msg.error()}")
                     continue
 
             process_message(msg)
 
     except KeyboardInterrupt:
-        pass
+        logger.info("Shutdown requested...")
 
     finally:
         consumer.close()
@@ -215,9 +206,6 @@ def consume_messages():
         logger.info(f"Updated comments:      {updated_comments}")
         logger.info(f"Comment errors:        {error_comments}")
         logger.info("=============================")
-
-
-    
 
 
 if __name__ == "__main__":

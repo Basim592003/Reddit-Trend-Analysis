@@ -33,13 +33,8 @@ reddit = praw.Reddit(
 logger.info("Reddit client initialized!")
 
 kafka_config = {
-    'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS'),
-    'security.protocol': 'SASL_SSL',
-    'sasl.mechanisms': 'PLAIN',
-    'sasl.username': os.getenv('KAFKA_API_KEY'),
-    'sasl.password': os.getenv('KAFKA_API_SECRET'),
+    'bootstrap.servers': os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092'),
 }
-
 producer = Producer(kafka_config)
 logger.info("Kafka producer initialized!")
 
@@ -167,7 +162,7 @@ def fetch_and_produce_threaded(subreddit_names, posts_per_subreddit, comments_pe
 
 if __name__ == "__main__":
     logger.info("="*60)
-    logger.info("Reddit Producer - Single Cycle Mode (GitHub Actions)")
+    logger.info("Reddit Producer - Continuous Mode")
     logger.info("="*60)
     
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -180,59 +175,58 @@ if __name__ == "__main__":
     BATCH_SIZE = config['batch_size']
     POSTS_PER_SUBREDDIT = config['posts_per_subreddit']
     COMMENTS_PER_POST = config['comments_per_post']
+    CYCLE_DELAY = config.get('cycle_delay', 300)
     
-    total_batches = (len(ALL_SUBREDDITS) + BATCH_SIZE - 1) // BATCH_SIZE
+    cycle_count = 0
     
-    overall_start = time.time()
-    grand_total_posts = 0
-    grand_total_comments = 0
-    
-    for batch_number in range(total_batches):
-        try:
-            start_idx = batch_number * BATCH_SIZE
-            end_idx = min(start_idx + BATCH_SIZE, len(ALL_SUBREDDITS))
-            current_batch = ALL_SUBREDDITS[start_idx:end_idx]
-            
-            logger.info(f"\n{'='*60}")
-            logger.info(f"Batch #{batch_number + 1}/{total_batches} - Processing: {', '.join(current_batch)}")
-            logger.info(f"{'='*60}")
-            
-            start_time = time.time()
-            
-            total_posts, total_comments = fetch_and_produce_threaded(
-                current_batch, 
-                posts_per_subreddit=POSTS_PER_SUBREDDIT, 
-                comments_per_post=COMMENTS_PER_POST
-            )
-            
-            elapsed = time.time() - start_time
-            grand_total_posts += total_posts
-            grand_total_comments += total_comments
-            
-            logger.info(f"\nBatch #{batch_number + 1} Complete:")
-            logger.info(f"  Time: {elapsed:.2f}s")
-            logger.info(f"  Posts: {total_posts}")
-            logger.info(f"  Comments: {total_comments}")
-            logger.info(f"  Total: {total_posts + total_comments}")
-            
-            if batch_number < total_batches - 1:
-                logger.info(f"\nWaiting 60s before next batch...")
-                time.sleep(60)
+    while True:
+        cycle_count += 1
+        total_batches = (len(ALL_SUBREDDITS) + BATCH_SIZE - 1) // BATCH_SIZE
+        
+        overall_start = time.time()
+        grand_total_posts = 0
+        grand_total_comments = 0
+        
+        logger.info(f"\n{'='*60}")
+        logger.info(f"CYCLE #{cycle_count} STARTING")
+        logger.info(f"{'='*60}")
+        
+        for batch_number in range(total_batches):
+            try:
+                start_idx = batch_number * BATCH_SIZE
+                end_idx = min(start_idx + BATCH_SIZE, len(ALL_SUBREDDITS))
+                current_batch = ALL_SUBREDDITS[start_idx:end_idx]
                 
-        except Exception as e:
-            logger.error(f"Critical error in batch {batch_number + 1}: {e}", exc_info=True)
-            continue
-    
-    total_time = time.time() - overall_start
-    
-    logger.info(f"\n{'='*60}")
-    logger.info("CYCLE COMPLETE - FINAL SUMMARY")
-    logger.info(f"{'='*60}")
-    logger.info(f"Total time: {total_time:.2f}s ({total_time/60:.1f} minutes)")
-    logger.info(f"Total posts: {grand_total_posts}")
-    logger.info(f"Total comments: {grand_total_comments}")
-    logger.info(f"Grand total: {grand_total_posts + grand_total_comments}")
-    logger.info(f"Processed {len(ALL_SUBREDDITS)} subreddits in {total_batches} batches")
-    logger.info("="*60)
-    
-    producer.flush()
+                logger.info(f"\nBatch #{batch_number + 1}/{total_batches} - Processing: {', '.join(current_batch)}")
+                
+                start_time = time.time()
+                
+                total_posts, total_comments = fetch_and_produce_threaded(
+                    current_batch, 
+                    posts_per_subreddit=POSTS_PER_SUBREDDIT, 
+                    comments_per_post=COMMENTS_PER_POST
+                )
+                
+                elapsed = time.time() - start_time
+                grand_total_posts += total_posts
+                grand_total_comments += total_comments
+                
+                logger.info(f"Batch #{batch_number + 1} Complete: {total_posts} posts, {total_comments} comments in {elapsed:.2f}s")
+                
+                if batch_number < total_batches - 1:
+                    time.sleep(60)
+                    
+            except Exception as e:
+                logger.error(f"Critical error in batch {batch_number + 1}: {e}", exc_info=True)
+                continue
+        
+        total_time = time.time() - overall_start
+        
+        logger.info(f"\n{'='*60}")
+        logger.info(f"CYCLE #{cycle_count} COMPLETE")
+        logger.info(f"Total: {grand_total_posts} posts, {grand_total_comments} comments in {total_time:.1f}s")
+        logger.info(f"Next cycle in {CYCLE_DELAY}s...")
+        logger.info(f"{'='*60}")
+        
+        producer.flush()
+        time.sleep(CYCLE_DELAY)
