@@ -36,7 +36,7 @@ consumer = Consumer(kafka_config)
 
 try:
     mongo_client = MongoClient(os.getenv('MONGO_CONNECTION_STRING'))
-    db = mongo_client['reddit_sentiment']
+    db = mongo_client['Local_kafka']
     post = db['posts']
     comment = db['comments']
 except Exception as e:

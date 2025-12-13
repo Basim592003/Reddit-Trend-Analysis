@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12.6-slim
 
 WORKDIR /app
 
@@ -7,4 +7,4 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-CMD ["python", "producer.py"]
+CMD ["python", "reddit_producer.py"]
